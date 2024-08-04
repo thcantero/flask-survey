@@ -1,7 +1,8 @@
 from flask import Flask, request, render_template, redirect, flash, session
 from flask_debugtoolbar import DebugToolbarExtension
-from surveys import satisfaction_survey as survey
+from surveys import surveys
 
+CURRENT_SURVEY_KEY = 'current_survey'
 RESPONSES_KEY = 'responses'
 
 app = Flask(__name__)
@@ -11,13 +12,20 @@ app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 toolbar = DebugToolbarExtension(app)
 
 @app.route('/')
-def redirect_to_start():
-    """ Start Survey"""
-    if request.method == 'GET':
-        return render_template('start_survey.html')
+def show_pick_survey_form():
+    """Show pic a survey form"""
+    return render_template('pick_survey.html', surveys=surveys)
 
-    # new_survey = SURVEY(name = request.form['name']) #SURVEY is the model
-    # db.session.add(new_survey)db.session.commit()
+@app.route('/', methods=['POST'])
+def pick_survey():
+    """Select a survey"""
+    survey_id = request.form['survey_code']
+
+    #don't allow to re-take survey
+    survey = surveys[survey_id]
+    session[CURRENT_SURVEY_KEY] = survey_id
+
+    return render_template('start_survey.html', survey=survey)
 
 @app.route('/start', methods=["POST"])
 def start_survey():
@@ -34,6 +42,8 @@ def show_question(questionid):
     # question_num: Question index in the list
     # question: Question text
     responses = session.get(RESPONSES_KEY)
+    survey_code = session[CURRENT_SURVEY_KEY]
+    survey = surveys[survey_code]
 
     if (responses is None):
         return redirect('/')
@@ -66,8 +76,14 @@ def get_answer():
     responses = session[RESPONSES_KEY]
     responses.append(choice)
     session[RESPONSES_KEY] = responses
+    survey_code = session[CURRENT_SURVEY_KEY]
+    survey = surveys[survey_code]
     return redirect(f"/questions/{len(responses)}")
 
 @app.route('/complete')
 def complete():
-    return render_template('complete.html', responses=session[RESPONSES_KEY])
+    survey_id = session[CURRENT_SURVEY_KEY]
+    survey = surveys[survey_id]
+    responses = session[RESPONSES_KEY]
+
+    return render_template('complete.html', survey=survey, responses=responses)
