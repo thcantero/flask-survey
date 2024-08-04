@@ -11,7 +11,6 @@ class Question:
         self.choices = choices
         self.allow_text = allow_text
 
-
 class Survey:
     """Questionnaire."""
 
