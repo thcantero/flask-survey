@@ -10,6 +10,11 @@
     <p>Instructions</p>
     
     <form action="/start" method="POST">
+        <ul>
+            {% for survey in survey.title %}
+            <li><input type="button" name="survey" value="{{survey}}">{{survey}}</li>
+            {% endfor %}
+        </ul>
         <button type="submit">Start</button>
     </form>
 </body>
